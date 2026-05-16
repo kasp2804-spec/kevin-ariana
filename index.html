@@ -5,10 +5,160 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kevin &amp; Ariana · 11 de Julio, 2026</title>
-    <script type="module" crossorigin src="/assets/index-CZPvnNoi.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DLBjQvnX.css">
+    <script type="module" crossorigin src="/assets/index-czpvnnoi.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-dlbjqvnx.css">
+
+    <!-- Extra features added via CSS/JS without touching the main bundle -->
+    <style>
+      /* 4. Scroll progress bar */
+      #kv-progress {
+        position: fixed;
+        top: 0; left: 0;
+        height: 3px;
+        width: 0%;
+        background: linear-gradient(to right, #c9a84c, #e2c97e);
+        z-index: 9999;
+        pointer-events: none;
+        transition: width 0.1s linear;
+      }
+
+      /* 3. Lightbox */
+      #kv-lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(26,46,66,.92);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-out;
+      }
+      #kv-lightbox.open { display: flex; }
+      #kv-lightbox img {
+        max-width: 90vw;
+        max-height: 90vh;
+        object-fit: contain;
+        box-shadow: 0 24px 80px rgba(0,0,0,.6);
+        border-radius: 2px;
+      }
+      #kv-lightbox-close {
+        position: absolute;
+        top: 20px; right: 20px;
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(245,248,251,.15);
+        border: 1px solid rgba(184,208,232,.35);
+        color: #f5f8fb;
+        font-size: 22px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Progress bar element -->
+    <div id="kv-progress"></div>
+
+    <!-- Lightbox element -->
+    <div id="kv-lightbox" onclick="kvCloseLb()">
+      <button id="kv-lightbox-close" onclick="event.stopPropagation();kvCloseLb()">&#215;</button>
+      <img id="kv-lb-img" src="" alt="Kevin y Ariana">
+    </div>
+
+    <script>
+    // Wait for React to finish rendering
+    function kvInit() {
+      const root = document.getElementById('root');
+      if (!root || !root.children.length) {
+        setTimeout(kvInit, 200);
+        return;
+      }
+
+      // 1+4. Scroll: parallax + progress bar
+      const prog = document.getElementById('kv-progress');
+
+      window.addEventListener('scroll', function() {
+        const sy = window.scrollY;
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+
+        // Progress bar
+        prog.style.width = (h > 0 ? Math.min(100, sy / h * 100) : 0) + '%';
+
+        // Parallax on hero photo
+        const heroImg = document.querySelector('[alt="Kevin y Ariana"]:not(#kv-lb-img)');
+        if (heroImg) {
+          heroImg.style.transform = 'translateY(' + (sy * 0.35) + 'px)';
+          heroImg.style.willChange = 'transform';
+        }
+      }, { passive: true });
+
+      // 2. Scroll reveal animations
+      const style = document.createElement('style');
+      style.textContent = \`
+        .kv-reveal {
+          opacity: 0;
+          transform: translateY(26px) scale(0.99);
+          transition: opacity 0.9s cubic-bezier(.22,1,.36,1), transform 0.9s cubic-bezier(.22,1,.36,1);
+        }
+        .kv-reveal.kv-vis {
+          opacity: 1;
+          transform: none;
+        }
+      \`;
+      document.head.appendChild(style);
+
+      // Add reveal class to section children
+      const sections = document.querySelectorAll('section, footer');
+      sections.forEach(function(sec) {
+        Array.from(sec.children).forEach(function(child, i) {
+          child.classList.add('kv-reveal');
+          child.style.transitionDelay = (i * 0.08) + 's';
+        });
+      });
+
+      const io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting) e.target.classList.add('kv-vis');
+        });
+      }, { threshold: 0.08 });
+
+      document.querySelectorAll('.kv-reveal').forEach(function(el) {
+        io.observe(el);
+      });
+
+      // 3. Lightbox on gallery images
+      const gallerySection = document.getElementById('galeria');
+      if (gallerySection) {
+        const imgs = gallerySection.querySelectorAll('img');
+        imgs.forEach(function(img) {
+          img.style.cursor = 'zoom-in';
+          img.addEventListener('click', function() {
+            document.getElementById('kv-lb-img').src = img.src;
+            document.getElementById('kv-lightbox').classList.add('open');
+          });
+        });
+      }
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') kvCloseLb();
+      });
+    }
+
+    function kvCloseLb() {
+      document.getElementById('kv-lightbox').classList.remove('open');
+    }
+
+    // Start after page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { setTimeout(kvInit, 500); });
+    } else {
+      setTimeout(kvInit, 500);
+    }
+    </script>
   </body>
 </html>
